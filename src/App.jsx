@@ -58,19 +58,47 @@ function App() {
   const [product, setProduct] = useState(data); //產品列表
   const [pick, setPick] = useState([]); //購物車
   const [sum, setSum] = useState(0); //總金額
+  const [order, setOrder] = useState([]); //訂單
+  const [text, setText] = useState(""); //備註
 
   //購物車增加品項
   const addPick = (drink)=>{
-    setPick( [
-      ...pick,
-      {
-        ...drink, //匯入選擇到的產品
-        id: new Date().getTime(), //更改他的id
-        qty: 1,
-        subtotal: drink.price
-      }
-    ]);
-    
+    // setPick([
+    //   ...pick,
+    //   {
+    //     ...drink, //匯入選擇到的產品
+    //     id: new Date().getTime(), //更改他的id
+    //     qty: 1,
+    //     subtotal: drink.price
+    //   }
+    // ]);
+
+    //先尋找購物車是否有該元素
+    const existingItem = pick.find((item) => item.name === drink.name);
+    if (existingItem) {
+    // 如果元素已存在，增加其数量
+    const newPick = pick.map((item) =>
+      item.name === drink.name
+        ? {
+            ...item,
+            qty: item.qty + 1,
+            subtotal: item.subtotal + item.price,
+          }
+        : item
+    );
+      setPick(newPick);
+    } else {
+      // 如果项不存在，将其添加到数组中
+      setPick([
+        ...pick,
+        {
+          ...drink,
+          id: new Date().getTime(),
+          qty: 1,
+          subtotal: drink.price,
+        },
+      ]);
+    }
   }
   //購物車更新品項
   const updatePick = (item, value)=>{
@@ -87,12 +115,27 @@ function App() {
     setPick(newPick)
   }
 
+  //送出訂單
+  const sendOrder = ()=>{
+    const value = document.querySelector("textarea[placeholder='備註']").value;
+    setText(value);
+    setOrder([
+      ...pick,
+    ]);
+  }
   useEffect(()=>{
     const total = pick.reduce((acc,cur)=>{
       return acc + cur.subtotal
     },0)
     setSum(total)
   },[pick])  //購物車有變動時就執行
+
+  // useEffect(()=>{
+  //   const total = order.reduce((acc,cur)=>{
+  //     return acc + cur.subtotal
+  //   },0)
+  //   setSum(total)
+  // },[order])  //購物車有變動時就執行
 
   return(<>
     <div id="root">
@@ -173,14 +216,17 @@ function App() {
               placeholder="備註"
             ></textarea>
             <div className="text-end">
-              <button className="btn btn-primary">送出</button>
+              <button className="btn btn-primary" onClick={()=>{
+                sendOrder()
+              }}>送出</button>
             </div>
           </div>
         </div>
         <hr />
         <div className="row justify-content-center">
           <div className="col-8">
-            <div className="card">
+            {
+              order.length>0 ? <div className="card">
               <div className="card-body">
                 <div className="card-title">
                   <h5>訂單</h5>
@@ -193,30 +239,30 @@ function App() {
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td>翡翠檸檬</td>
-                        <td>7</td>
-                        <td>385</td>
-                      </tr>
-                      <tr>
-                        <td>冬瓜檸檬</td>
-                        <td>7</td>
-                        <td>315</td>
-                      </tr>
-                      <tr>
-                        <td>冬瓜檸檬</td>
-                        <td>4</td>
-                        <td>180</td>
-                      </tr>
+                      {
+                        order.map(item=>{
+                          return(
+                            <tr key={item.id}>
+                              <td>{item.name}</td>
+                              <td>{item.qty}</td>
+                              <td>{item.subtotal}</td>
+                            </tr>
+                          )
+                        })
+                      }
                     </tbody>
                   </table>
-                  <div className="text-end">備註: <span>都不要香菜</span></div>
+                  <div className="text-end">備註: <span>{text}</span></div>
                   <div className="text-end">
-                    <h5>總計: <span>$145</span></h5>
+                    <h5>總計: <span>${order.length>0 ? sum : ""}</span></h5>
                   </div>
                 </div>
               </div>
             </div>
+            :
+            <div>我在等你的訂單～</div>
+            }
+            
           </div>
         </div>
       </div>
